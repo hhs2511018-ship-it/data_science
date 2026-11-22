@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>데이터 과학 수행평가 코드 연습 - 데이터 모델링 구현</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --code-bg: #1e1e2e;
+            --code-text: #cdd6f4;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding-bottom: 60px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem;
+        }
+
+        /* 상단 컨트롤 바 */
+        .control-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card);
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .score-badge {
+            font-weight: 700;
+            font-size: 1rem;
+            background: #eff6ff;
+            color: var(--primary-dark);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #bfdbfe;
+        }
+
+        /* 평가 기준표 접기/펼치기 */
+        .rubric-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .rubric-header {
+            padding: 1rem 1.25rem;
+            background: #f1f5f9;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .rubric-content {
+            padding: 1rem;
+            display: none;
+            overflow-x: auto;
+        }
+
+        .rubric-content.open {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8fafc;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .badge-diff {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .diff-low { background: #dcfce7; color: #166534; }
+        .diff-mid { background: #fef3c7; color: #92400e; }
+        .diff-high { background: #fee2e2; color: #991b1b; }
+
+        /* 문제 카드 */
+        .step-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: border-color 0.2s;
+        }
+
+        .step-card.correct { border-left: 5px solid var(--success); }
+        .step-card.partial { border-left: 5px solid var(--warning); }
+        .step-card.wrong { border-left: 5px solid var(--danger); }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            gap: 0.5rem;
+        }
+
+        .step-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .step-meta {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .step-desc {
+            font-size: 0.92rem;
+            color: #334155;
+            margin-bottom: 1rem;
+            background: #f8fafc;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+        }
+
+        textarea.code-input {
+            width: 100%;
+            min-height: 110px;
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+            font-size: 0.95rem;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 2px solid #313244;
+            resize: vertical;
+            line-height: 1.5;
+            tab-size: 4;
+        }
+
+        textarea.code-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.45rem 0.9rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.9; }
+        .btn-check { background: var(--primary); color: white; }
+        .btn-hint { background: #e2e8f0; color: #334155; }
+        .btn-ans { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+        .hint-box, .answer-box, .feedback-box {
+            margin-top: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            display: none;
+        }
+
+        .hint-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+
+        .answer-box {
+            background: #1e1e2e;
+            color: #a6e3a1;
+            font-family: 'Consolas', monospace;
+            white-space: pre-wrap;
+        }
+
+        .feedback-box {
+            font-weight: 600;
+        }
+        .fb-success { background: #dcfce7; color: #166534; display: block; }
+        .fb-partial { background: #fef3c7; color: #92400e; display: block; }
+        .fb-error { background: #fee2e2; color: #991b1b; display: block; }
+
+        /* 하단 전체 채점 버튼 */
+        .bottom-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-lg {
+            padding: 0.85rem 2rem;
+            font-size: 1.05rem;
+            border-radius: 10px;
+        }
+
+        /* 정답지 탭 전용 */
+        #full-answer-view {
+            display: none;
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        pre.full-code {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 1.25rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 0.92rem;
+            line-height: 1.6;
+            margin-top: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📊 데이터 과학 수행평가 연습 (데이터 모델링 구현)</h1>
+    <p>평가 범위: 유인물 33p ~ 36p | 총점 25점 (기본점수 8점 + 수행 17점)</p>
+</header>
+
+<div class="container">
+    <!-- 평가 기준표 (토글) -->
+    <div class="rubric-box">
+        <div class="rubric-header" onclick="toggleRubric()">
+            <span>📋 수행평가 채점 기준표 보기 (클릭하여 펼치기/접기)</span>
+            <span id="rubric-arrow">▼</span>
+        </div>
+        <div class="rubric-content" id="rubric-content">
+            <table>
+                <thead>
+                    <tr>
+                        <th>영역</th>
+                        <th>평가 요소</th>
+                        <th>만점 기준 (3점 / 4점)</th>
+                        <th>배점</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td rowspan="3"><strong>데이터 수집하기</strong><br>(9점 / 난이도 하)</td>
+                        <td>1. 라이브러리 가져오기 &lt;시각화 라이브러리&gt;</td>
+                        <td>주어진 라이브러리를 모두 정확하게 서술한 경우</td>
+                        <td style="text-align:center;">3점</td>
+                    </tr>
+                    <tr>
+                        <td>2. 패키지 설치하기 &lt;맷플롯립 한글화 패키지&gt;</td>
+                        <td>한글 패키지를 정확하게 설치한 경우</td>
+                        <td style="text-align:center;">3점</td>
+                    </tr>
+                    <tr>
+                        <td>3. 데이터 불러오기 &lt;CSV 파일 불러오기&gt;</td>
+                        <td>데이터를 정확하게 불러온 경우</td>
+                        <td style="text-align:center;">3점</td>
+                    </tr>
+                    <tr>
+                        <td rowspan="3"><strong>전처리 및 탐색하기</strong><br>(9점 / 난이도 중)</td>
+                        <td>4. 시각화하기 &lt;그래프 그리기&gt;</td>
+                        <td>주어진 그래프에 맞는 시각화 명령을 정확하게 서술한 경우</td>
+                        <td style="text-align:center;">3점</td>
+                    </tr>
+                    <tr>
+                        <td>5. 데이터 추출하기 &lt;독립 변수, 종속 변수 설정&gt;</td>
+                        <td>핵심 데이터를 모두 정확하게 추출한 경우</td>
+                        <td style="text-align:center;">3점</td>
+                    </tr>
+                    <tr>
+                        <td>6. &lt;훈련 데이터와 테스트 데이터 나누기&gt;</td>
+                        <td>훈련 데이터와 테스트 데이터를 정확하게 나누도록 서술한 경우</td>
+                        <td style="text-align:center;">3점</td>
+                    </tr>
+                    <tr>
+                        <td rowspan="2"><strong>모델링하기</strong><br>(7점 / 난이도 상)</td>
+                        <td>7. 모델 생성하기 &lt;모델 생성 - 모델 학습&gt;</td>
+                        <td>로지스틱 회귀 모델을 정확하게 생성, 학습한 경우</td>
+                        <td style="text-align:center;">4점</td>
+                    </tr>
+                    <tr>
+                        <td>8. 예측하기 &lt;모델 예측 - 모델 평가&gt;</td>
+                        <td>모델의 예측 결과, 모델 평가를 정확히 도출한 경우</td>
+                        <td style="text-align:center;">3점</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 상단 모드 전환 및 점수판 -->
+    <div class="control-bar">
+        <div class="tabs">
+            <button class="tab-btn active" id="btn-mode-practice" onclick="setMode('practice')">✏️ 연습 모드 (힌트 제공)</button>
+            <button class="tab-btn" id="btn-mode-exam" onclick="setMode('exam')">⏱️ 실전 테스트 모드</button>
+            <button class="tab-btn" id="btn-mode-ans" onclick="setMode('answer')">📖 유인물 전체 정답 코드</button>
+        </div>
+        <div class="score-badge" id="total-score-display">예상 점수: 8 / 25점 (기본점수 8점)</div>
+    </div>
+
+    <!-- 문제 풀이 영역 -->
+    <div id="quiz-container"></div>
+
+    <!-- 하단 버튼 -->
+    <div class="bottom-actions" id="bottom-actions">
+        <button class="btn btn-check btn-lg" onclick="gradeAll()">💯 전체 채점하기</button>
+        <button class="btn btn-hint btn-lg" onclick="resetAll()">🔄 모두 초기화</button>
+    </div>
+
+    <!-- 전체 정답 코드 뷰 -->
+    <div id="full-answer-view">
+        <h2>📌 유인물 35~36p : 로지스틱 회귀 모델 (펭귄 종 분류) 전체 코드</h2>
+        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:0.5rem;">수행평가 채점 기준의 '로지스틱 회귀 모델' 중심 전체 흐름입니다.</p>
+        <pre class="full-code"># 1. 라이브러리 가져오기 & 2. 한글화 패키지 설치 (유인물 33p 참고)
+!pip install koreanize-matplotlib
+import koreanize_matplotlib
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# 3. 데이터 불러오기 및 결측치 처리 (유인물 35p)
+df = pd.read_csv('penguins_size.csv')
+df.dropna(axis=0, inplace=True)
+
+# 4. 시각화하기 (유인물 33p 서브플롯 / 36p 히트맵 참고)
+fig, ax = plt.subplots(1, 3, figsize=(14, 5))
+sns.histplot(df['culmen_length_mm'], ax=ax[0])
+sns.histplot(df['culmen_depth_mm'], ax=ax[1])
+sns.histplot(df['flipper_length_mm'], ax=ax[2])
+plt.show()
+
+# 5. 독립 변수와 종속 변수 설정하기 (유인물 35p)
+X = df.iloc[:, [2, 3, 4]]
+y = df['species']
+
+# (참고) 데이터 정규화하기 (유인물 35p)
+from sklearn.preprocessing import MinMaxScaler
+X_scaled = MinMaxScaler().fit_transform(X)
+X = pd.DataFrame(X_scaled, index=X.index, columns=X.columns)
+
+# 6. 훈련 데이터와 테스트 데이터로 분할하기 (유인물 36p)
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y)
+
+# 7. 모델 생성 및 학습하기 (유인물 36p)
+from sklearn.linear_model import LogisticRegression
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# 8. 모델 예측 및 평가하기 (유인물 36p)
+model.predict(X_test.iloc[[0]])
+
+from sklearn.metrics import accuracy_score, confusion_matrix
+accuracy_score(y_test, model.predict(X_test))
+
+conf = confusion_matrix(y_test, model.predict(X_test))
+sns.heatmap(conf, annot=True, cmap='Blues')
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()</pre>
+
+        <h2>📌 유인물 33~34p : 다중 선형 회귀 모델 핵심 코드 (함께 암기!)</h2>
+        <pre class="full-code"># 데이터 불러오기 (cp949 인코딩 주의)
+df = pd.read_csv('fitness data.csv', encoding='cp949')
+
+# 독립 변수(2차원)와 종속 변수 설정
+X = df[['반복점프', '왕복오래달리기']]
+y = df['제자리멀리뛰기']
+
+# 훈련/테스트 분할 (random_state=0)
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+
+# 선형 회귀 모델 생성 및 학습
+from sklearn.linear_model import LinearRegression
+model3 = LinearRegression()
+model3.fit(X_train, y_train)
+
+# 예측 및 결정계수(r2_score) 평가
+pred = model3.predict(X_test)
+from sklearn.metrics import r2_score
+r2_score(y_test, pred)</pre>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        {
+            id: 1,
+            area: "데이터 수집하기",
+            diff: "난이도 하",
+            diffClass: "diff-low",
+            maxScore: 3,
+            minScore: 1,
+            title: "1단계. 라이브러리 가져오기 <시각화 라이브러리>",
+            desc: "데이터 처리를 위한 <code>pandas</code>(별칭 pd), 시각화를 위한 <code>seaborn</code>(별칭 sns)과 <code>matplotlib.pyplot</code>(별칭 plt) 라이브러리를 불러오는 코드를 작성하세요.",
+            placeholder: "import ...",
+            hint: "import pandas as pd / import seaborn as sns / import matplotlib.pyplot as plt 세 줄을 작성합니다.",
+            answer: "import pandas as pd\nimport seaborn as sns\nimport matplotlib.pyplot as plt",
+            keywords: [
+                ["import pandas as pd"],
+                ["import seaborn as sns"],
+                ["import matplotlib.pyplot as plt"]
+            ]
+        },
+        {
+            id: 2,
+            area: "데이터 수집하기",
+            diff: "난이도 하",
+            diffClass: "diff-low",
+            maxScore: 3,
+            minScore: 1,
+            title: "2단계. 패키지 설치하기 <맷플롯립 한글화 패키지>",
+            desc: "코랩(Colab) 환경에서 그래프의 한글 깨짐을 방지하기 위해 <code>koreanize-matplotlib</code> 패키지를 설치하고 불러오는 코드를 작성하세요. (유인물 33p)",
+            placeholder: "!pip install ...",
+            hint: "설치는 !pip install koreanize-matplotlib, 불러오기는 import koreanize_matplotlib 입니다. (하이픈 '-'과 언더바 '_' 구분 주의!)",
+            answer: "!pip install koreanize-matplotlib\nimport koreanize_matplotlib",
+            keywords: [
+                ["pip install koreanize-matplotlib"],
+                ["import koreanize_matplotlib"]
+            ]
+        },
+        {
+            id: 3,
+            area: "데이터 수집하기",
+            diff: "난이도 하",
+            diffClass: "diff-low",
+            maxScore: 3,
+            minScore: 1,
+            title: "3단계. 데이터 불러오기 <CSV 파일 불러오기>",
+            desc: "펭귄 데이터 파일인 <code>'penguins_size.csv'</code>를 읽어와 변수 <code>df</code>에 저장하고, 결측치가 있는 행을 원본에서 바로 삭제(<code>dropna</code>)하는 코드를 작성하세요. (유인물 35p)",
+            placeholder: "df = pd.read_csv(...)",
+            hint: "pd.read_csv('penguins_size.csv')로 불러온 뒤, df.dropna(axis=0, inplace=True)로 결측치를 제거합니다.",
+            answer: "df = pd.read_csv('penguins_size.csv')\ndf.dropna(axis=0, inplace=True)",
+            keywords: [
+                ["read_csv", "penguins_size.csv"],
+                ["dropna", "inplace=True"]
+            ]
+        },
+        {
+            id: 4,
+            area: "전처리 및 탐색하기",
+            diff: "난이도 중",
+            diffClass: "diff-mid",
+            maxScore: 3,
+            minScore: 1,
+            title: "4단계. 시각화하기 <그래프 그리기>",
+            desc: "1행 3열(크기 14, 5)의 서브플롯(<code>subplots</code>)을 생성하고, seaborn의 <code>histplot</code>을 이용해 첫 번째 영역(<code>ax[0]</code>)에 <code>df['반복점프']</code>(또는 <code>df['culmen_length_mm']</code>) 히스토그램을 그린 뒤 화면에 출력(<code>plt.show()</code>)하세요. (유인물 33p)",
+            placeholder: "fig, ax = plt.subplots(...)",
+            hint: "fig, ax = plt.subplots(1, 3, figsize=(14, 5)) / sns.histplot(..., ax=ax[0]) / plt.show()",
+            answer: "fig, ax = plt.subplots(1, 3, figsize=(14, 5))\nsns.histplot(df['반복점프'], ax=ax[0])\nplt.show()",
+            keywords: [
+                ["subplots(1, 3", "subplots(1,3"],
+                ["sns.histplot", "ax=ax[0]"],
+                ["plt.show()"]
+            ]
+        },
+        {
+            id: 5,
+            area: "전처리 및 탐색하기",
+            diff: "난이도 중",
+            diffClass: "diff-mid",
+            maxScore: 3,
+            minScore: 1,
+            title: "5단계. 데이터 추출하기 <독립 변수, 종속 변수 설정>",
+            desc: "펭귄 데이터(<code>df</code>)에서 <code>iloc</code>를 사용해 2, 3, 4번 인덱스 열(부리 길이, 부리 깊이, 날개 길이)을 독립 변수 <code>X</code>로, <code>'species'</code> 열을 종속 변수 <code>y</code>로 추출하세요. (유인물 35p)",
+            placeholder: "X = df.iloc[...]\ny = ...",
+            hint: "모든 행(:)과 [2, 3, 4]열을 선택할 때는 df.iloc[:, [2, 3, 4]]를 사용합니다.",
+            answer: "X = df.iloc[:, [2, 3, 4]]\ny = df['species']",
+            keywords: [
+                ["iloc", "[:,", "[2, 3, 4]", "[2,3,4]"],
+                ["y", "df['species']", 'df["species"]']
+            ]
+        },
+        {
+            id: 6,
+            area: "전처리 및 탐색하기",
+            diff: "난이도 중",
+            diffClass: "diff-mid",
+            maxScore: 3,
+            minScore: 1,
+            title: "6단계. <훈련 데이터와 테스트 데이터 나누기>",
+            desc: "<code>train_test_split</code>을 불러와 <code>X, y</code>를 7:3 비율(<code>test_size=0.3</code>)로 분할하세요. (펭귄 종 비율을 균일하게 유지하기 위해 <code>stratify=y</code> 옵션을 포함하세요. 유인물 36p)",
+            placeholder: "from sklearn.model_selection import ...\nX_train, X_test, y_train, y_test = ...",
+            hint: "from sklearn.model_selection import train_test_split 후 train_test_split(X, y, test_size=0.3, stratify=y)를 호출합니다.",
+            answer: "from sklearn.model_selection import train_test_split\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y)",
+            keywords: [
+                ["sklearn.model_selection", "train_test_split"],
+                ["X_train", "X_test", "y_train", "y_test"],
+                ["test_size=0.3", "stratify=y"]
+            ]
+        },
+        {
+            id: 7,
+            area: "모델링하기",
+            diff: "난이도 상",
+            diffClass: "diff-high",
+            maxScore: 4,
+            minScore: 2,
+            title: "7단계. 모델 생성하기 <모델 생성 - 모델 학습>",
+            desc: "사이킷런의 <code>LogisticRegression</code>을 불러와 로지스틱 회귀 모델 객체 <code>model</code>을 생성하고, 훈련 데이터(<code>X_train, y_train</code>)로 학습(<code>fit</code>)시키세요. (유인물 36p, 배점 4점)",
+            placeholder: "from sklearn.linear_model import ...\nmodel = ...\nmodel.fit(...)",
+            hint: "from sklearn.linear_model import LogisticRegression / model = LogisticRegression() / model.fit(X_train, y_train)",
+            answer: "from sklearn.linear_model import LogisticRegression\nmodel = LogisticRegression()\nmodel.fit(X_train, y_train)",
+            keywords: [
+                ["sklearn.linear_model", "LogisticRegression"],
+                ["model = LogisticRegression()"],
+                ["model.fit(X_train, y_train)", "fit(X_train,y_train)"]
+            ]
+        },
+        {
+            id: 8,
+            area: "모델링하기",
+            diff: "난이도 상",
+            diffClass: "diff-high",
+            maxScore: 3,
+            minScore: 1,
+            title: "8단계. 예측하기 <모델 예측 - 모델 평가>",
+            desc: "① 테스트 데이터의 첫 번째 행(<code>X_test.iloc[[0]]</code>)의 종을 예측(<code>predict</code>)하고, ② <code>accuracy_score</code>를 불러와 <code>y_test</code>와 전체 테스트 데이터 예측값의 정확도를 구하는 코드를 작성하세요. (유인물 36p)",
+            placeholder: "model.predict(...)\nfrom sklearn.metrics import ...\naccuracy_score(...)",
+            hint: "① model.predict(X_test.iloc[[0]]) (대괄호 2개 주의!) / ② from sklearn.metrics import accuracy_score 후 accuracy_score(y_test, model.predict(X_test))",
+            answer: "model.predict(X_test.iloc[[0]])\nfrom sklearn.metrics import accuracy_score\naccuracy_score(y_test, model.predict(X_test))",
+            keywords: [
+                ["predict", "iloc[[0]]"],
+                ["sklearn.metrics", "accuracy_score"],
+                ["accuracy_score(y_test", "predict(X_test)"]
+            ]
+        }
+    ];
+
+    let currentMode = 'practice';
+    let userScores = {};
+
+    function renderQuestions() {
+        const container = document.getElementById('quiz-container');
+        container.innerHTML = '';
+
+        questions.forEach(q => {
+            userScores[q.id] = q.minScore; // 기본 최하점 초기화
+            const card = document.createElement('div');
+            card.className = 'step-card';
+            card.id = `card-${q.id}`;
+
+            card.innerHTML = `
+                <div class="step-header">
+                    <div class="step-title">${q.title}</div>
+                    <div class="step-meta">
+                        <span class="badge-diff ${q.diffClass}">${q.diff}</span>
+                        <span style="font-weight:700; color:var(--primary);">배점: ${q.maxScore}점</span>
+                    </div>
+                </div>
+                <div class="step-desc">${q.desc}</div>
+                <textarea class="code-input" id="input-${q.id}" placeholder="${q.placeholder}" onkeydown="handleTab(event, this)"></textarea>
+                <div class="btn-group">
+                    <button class="btn btn-check" onclick="gradeOne(${q.id})">채점하기</button>
+                    <button class="btn btn-hint practice-only" onclick="toggleBox('hint-${q.id}')">💡 힌트 보기</button>
+                    <button class="btn btn-ans practice-only" onclick="toggleBox('ans-${q.id}')">👀 정답 보기</button>
+                </div>
+                <div class="hint-box" id="hint-${q.id}"><strong>힌트:</strong> ${q.hint}</div>
+                <div class="answer-box" id="ans-${q.id}">${q.answer}</div>
+                <div class="feedback-box" id="fb-${q.id}"></div>
+            `;
+            container.appendChild(card);
+        });
+        updateTotalScore();
+    }
+
+    function handleTab(e, textarea) {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            textarea.value = textarea.value.substring(0, start) + "    " + textarea.value.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + 4;
+        }
+    }
+
+    function toggleBox(id) {
+        const el = document.getElementById(id);
+        el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function toggleRubric() {
+        const content = document.getElementById('rubric-content');
+        const arrow = document.getElementById('rubric-arrow');
+        content.classList.toggle('open');
+        arrow.textContent = content.classList.contains('open') ? '▲' : '▼';
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        const quizContainer = document.getElementById('quiz-container');
+        const bottomActions = document.getElementById('bottom-actions');
+        const fullAnsView = document.getElementById('full-answer-view');
+
+        if (mode === 'answer') {
+            document.getElementById('btn-mode-ans').classList.add('active');
+            quizContainer.style.display = 'none';
+            bottomActions.style.display = 'none';
+            fullAnsView.style.display = 'block';
+            return;
+        }
+
+        quizContainer.style.display = 'block';
+        bottomActions.style.display = 'flex';
+        fullAnsView.style.display = 'none';
+
+        if (mode === 'practice') {
+            document.getElementById('btn-mode-practice').classList.add('active');
+            document.querySelectorAll('.practice-only').forEach(el => el.style.display = 'inline-block');
+        } else {
+            document.getElementById('btn-mode-exam').classList.add('active');
+            document.querySelectorAll('.practice-only').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.hint-box, .answer-box').forEach(el => el.style.display = 'none');
+        }
+    }
+
+    function normalizeCode(str) {
+        return str.replace(/\s+/g, ' ').replace(/\s*\(\s*/g, '(').replace(/\s*\)\s*/g, ')').replace(/\s*=\s*/g, '=').replace(/\s*,\s*/g, ',').trim();
+    }
+
+    function gradeOne(id) {
+        const q = questions.find(item => item.id === id);
+        const rawInput = document.getElementById(`input-${id}`).value;
+        const normInput = normalizeCode(rawInput);
+        const card = document.getElementById(`card-${id}`);
+        const fb = document.getElementById(`fb-${id}`);
+
+        card.classList.remove('correct', 'partial', 'wrong');
+        fb.classList.remove('fb-success', 'fb-partial', 'fb-error');
+
+        if (!normInput) {
+            userScores[id] = q.minScore;
+            card.classList.add('wrong');
+            fb.classList.add('fb-error');
+            fb.textContent = `❌ 미작성 (채점 기준 최하점: ${q.minScore}점 / ${q.maxScore}점)`;
+            updateTotalScore();
+            return;
+        }
+
+        let matchedGroups = 0;
+        q.keywords.forEach(group => {
+            const isGroupMatched = group.some(kw => normInput.includes(normalizeCode(kw)));
+            if (isGroupMatched) matchedGroups++;
+        });
+
+        if (matchedGroups === q.keywords.length) {
+            userScores[id] = q.maxScore;
+            card.classList.add('correct');
+            fb.classList.add('fb-success');
+            fb.textContent = `✅ 정확합니다! 만점 (${q.maxScore}점 / ${q.maxScore}점)`;
+        } else if (matchedGroups > 0) {
+            const partialScore = q.maxScore - 1;
+            userScores[id] = partialScore;
+            card.classList.add('partial');
+            fb.classList.add('fb-partial');
+            fb.textContent = `⚠️ 부분 정답입니다. 누락된 코드가 있는지 확인해보세요! (${partialScore}점 / ${q.maxScore}점)`;
+        } else {
+            userScores[id] = q.minScore;
+            card.classList.add('wrong');
+            fb.classList.add('fb-error');
+            fb.textContent = `❌ 핵심 명령어가 부족합니다. 다시 작성해보세요. (${q.minScore}점 / ${q.maxScore}점)`;
+        }
+
+        updateTotalScore();
+    }
+
+    function gradeAll() {
+        questions.forEach(q => gradeOne(q.id));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetAll() {
+        if (!confirm("작성한 모든 코드를 초기화할까요?")) return;
+        questions.forEach(q => {
+            document.getElementById(`input-${q.id}`).value = '';
+            document.getElementById(`card-${q.id}`).classList.remove('correct', 'partial', 'wrong');
+            const fb = document.getElementById(`fb-${q.id}`);
+            fb.className = 'feedback-box';
+            fb.textContent = '';
+            userScores[q.id] = q.minScore;
+        });
+        updateTotalScore();
+    }
+
+    function updateTotalScore() {
+        let sum = 0;
+        for (let id in userScores) {
+            sum += userScores[id];
+        }
+        document.getElementById('total-score-display').textContent = `예상 점수: ${sum} / 25점 (미작성 시 기본 8점 포함)`;
+    }
+
+    renderQuestions();
+</script>
+
+</body>
+</html>
