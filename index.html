@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>데이터 분석 복습하기</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{--bg:#fff;--tx:#212121;--mu:#757575;--bd:#cfcfcf;--in:#303f9f;--out:#d84315;--ed:#f7f7f7;--ac:#1a73e8;--ok:#1a8a4a;--no:#c93a3a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1b1d;--tx:#e8e8e8;--mu:#9a9a9a;--bd:#3d3d40;--in:#8c9eff;--out:#ff8a65;--ed:#252528;--ac:#8ab4f8;--ok:#4cc27f;--no:#ff7b7b}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.6 -apple-system,"Noto Sans KR","Malgun Gothic",sans-serif}
+main{max-width:900px;margin:0 auto;padding:22px 14px 70px}
+.sch{color:var(--mu);margin:0}h1{font-size:26px;margin:2px 0 6px}.df{margin:0 0 12px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 6px}
+button,.file{font:inherit;font-size:13px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:4px;padding:4px 10px;cursor:pointer}
+button.on{background:var(--ac);color:#fff;border-color:var(--ac)}.file input{display:none}
+.hint{color:var(--mu);font-size:13px;margin:0 0 18px}
+.nb{margin:22px 0 0}.h{font-weight:700;font-size:16px}.pr{color:var(--mu);font-size:14px;margin:0 0 6px}
+.row{display:flex;gap:6px;align-items:flex-start}
+.lab{font:13px ui-monospace,Menlo,Consolas,monospace;color:var(--in);width:62px;flex:none;text-align:right;padding-top:8px}
+.ed{flex:1;display:flex;border:1px solid var(--bd);border-radius:2px;background:var(--ed);min-width:0}
+.ed:focus-within{border-color:var(--ac)}
+.gut{font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;color:var(--mu);text-align:right;padding:8px 6px;user-select:none;white-space:pre;border-right:1px solid var(--bd)}
+textarea{flex:1;border:0;outline:0;background:transparent;color:var(--tx);font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:8px;resize:none;overflow:hidden;min-width:0;white-space:pre;tab-size:4;cursor:default}
+textarea:not([readonly]){cursor:text}
+.out{margin:4px 0 0 68px;font-size:13px}.out .o{font:13px ui-monospace,monospace;color:var(--out)}
+.ok{color:var(--ok)}.no{color:var(--no)}
+.ans{margin:4px 0 0 68px;font-size:13px}.ans a{color:var(--ac);cursor:pointer}
+pre.sol{background:var(--ed);border:1px solid var(--bd);padding:8px;margin:6px 0 0;overflow-x:auto;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace}
+.tb{overflow-x:auto;margin-top:6px}table{border-collapse:collapse;font-size:12px}td,th{border:1px solid var(--bd);padding:2px 8px;white-space:nowrap}
+</style></head><body><main>
+<p class="sch">2학년 2학기 데이터 과학</p>
+<h1>데이터 분석 파이썬 코드 작성</h1>
+<p class="df">데이터 프레임 이름 <b>df</b></p>
+<div class="tools"><button id="all">코드 처음으로 실행</button>
+<button class="on" data-s="fit">회귀 (제자리멀리뛰기)</button><button data-s="peng">분류 (펭귄 종)</button>
+<label class="file">fitness data.csv<input type="file" accept=".csv" data-k="fit"></label>
+<label class="file">penguins_size.csv<input type="file" accept=".csv" data-k="peng"></label><span id="fs" class="hint"></span></div>
+<p class="hint">Ctrl + Enter 실행 · 빈칸을 더블클릭하여 코드를 작성하세요 · 파이썬을 직접 실행하지 않고 평가 기준 요소가 들어 있는지로 채점해요</p>
+<div id="list"></div>
+</main>
+<script>
+const G={a:["데이터 수집하기",9,"난이도 하"],b:["전처리 및 탐색하기",9,"난이도 중"],c:["모델링하기",7,"난이도 상"]};
+const S={
+fit:[
+{g:"a",t:"라이브러리 가져오기",p:"pandas, seaborn, matplotlib.pyplot을 각각 pd, sns, plt 별칭으로 가져오세요.",
+c:[["import pandas as pd","importpandasaspd"],["import seaborn as sns","importseabornassns"],["import matplotlib.pyplot as plt","importmatplotlib\\.pyplotasplt"]],
+a:`import pandas as pd  # 표(데이터프레임)를 다루는 라이브러리. 별칭 pd로 짧게 쓴다
+import seaborn as sns  # 히스토그램 같은 통계 그래프를 쉽게 그리는 라이브러리
+import matplotlib.pyplot as plt  # 그래프 영역(subplots)과 출력(show)을 담당`},
+{g:"a",t:"패키지 설치하기",p:"그래프의 한글이 깨지지 않도록 koreanize-matplotlib 패키지를 설치하고 가져오세요.",
+c:[["!pip install koreanize-matplotlib","!pipinstallkoreanize-matplotlib"],["import koreanize_matplotlib (설치는 하이픈 -, 가져오기는 밑줄 _)","importkoreanize_matplotlib"]],
+a:`!pip install koreanize-matplotlib  # 코랩에 없는 패키지는 !pip로 설치. 설치 이름은 하이픈(-)
+import koreanize_matplotlib  # 가져올 때는 밑줄(_). 가져와야 그래프 한글이 안 깨진다`},
+{g:"a",t:"CSV 파일 불러오기",p:"코랩에서 fitness data.csv를 업로드한 뒤, pandas를 가져와 cp949 인코딩으로 df에 불러오고 앞 5행을 출력하세요.",show:"head",
+c:[["from google.colab import files / files.upload()","fromgoogle\\.colabimportfiles[\\s\\S]*files\\.upload\\(\\)"],["import pandas as pd","importpandasaspd"],["df = pd.read_csv(...)","df=pd\\.read_csv\\("],["파일명 'fitness data.csv'","fitnessdata\\.csv"],["encoding='cp949'","encoding='cp949'"],["df.head()","df\\.head\\(\\)"]],
+a:`from google.colab import files  # 코랩에서 내 컴퓨터의 파일을 올리기 위한 도구
+files.upload()  # 실행하면 파일 선택창이 뜬다 → fitness data.csv 선택
+import pandas as pd  # read_csv()는 pandas 기능이라 먼저 가져와야 한다
+df = pd.read_csv('fitness data.csv', encoding='cp949')  # 한글이 들어간 csv는 cp949로 읽어야 글자가 안 깨진다
+df.head()  # 앞 5행만 출력해서 데이터가 잘 들어왔는지 확인`},
+{g:"b",t:"그래프 그리기",p:"1행 3열 그래프 영역(figsize=(14,5))을 만들고, 반복점프·왕복오래달리기·제자리멀리뛰기의 히스토그램을 순서대로 그린 뒤 출력하세요.",
+c:[["fig, ax = plt.subplots(1, 3, figsize=(14,5))","plt\\.subplots\\(1,3"],["반복점프 → ax[0]","histplot\\(df\\['반복점프'\\],ax=ax\\[0\\]"],["왕복오래달리기 → ax[1]","histplot\\(df\\['왕복오래달리기'\\],ax=ax\\[1\\]"],["제자리멀리뛰기 → ax[2]","histplot\\(df\\['제자리멀리뛰기'\\],ax=ax\\[2\\]"],["plt.show()","plt\\.show\\(\\)"]],
+a:`fig, ax = plt.subplots(1, 3, figsize=(14,5))  # 1행 3열로 그래프 칸 3개 만들기(fig=전체 영역, ax=각 칸)
+sns.histplot(df['반복점프'], ax=ax[0])  # 첫 번째 칸(0번)에 분포 그리기
+sns.histplot(df['왕복오래달리기'], ax=ax[1])  # 두 번째 칸(1번). 인덱스는 0부터 시작!
+sns.histplot(df['제자리멀리뛰기'], ax=ax[2])  # 세 번째 칸(2번)
+plt.show()  # 완성된 그래프 출력`},
+{g:"b",t:"독립 변수·종속 변수 추출하기",p:"반복점프, 왕복오래달리기를 독립 변수 X로, 제자리멀리뛰기를 종속 변수 y로 추출하세요.",
+c:[["X = df[['반복점프','왕복오래달리기']]","X=df\\[\\['반복점프','왕복오래달리기'\\]\\]"],["y = df[['제자리멀리뛰기']]","y=df\\[\\['제자리멀리뛰기'\\]\\]"]],
+a:`X = df[['반복점프', '왕복오래달리기']]  # 대괄호 두 겹 → 2차원 데이터프레임. fit()은 2차원 X를 요구한다
+y = df[['제자리멀리뛰기']]  # 예측하고 싶은 값(종속 변수). 마찬가지로 2차원 형태로 추출`},
+{g:"b",t:"훈련·테스트 데이터 나누기",p:"훈련:테스트 = 7:3으로 나누세요(random_state=0). 나눈 뒤 X_train, X_test의 shape도 출력하세요.",
+c:[["from sklearn.model_selection import train_test_split","fromsklearn\\.model_selectionimporttrain_test_split"],["X_train, X_test, y_train, y_test = train_test_split(X, y, ...)","X_train,X_test,y_train,y_test=train_test_split\\(X,y"],["test_size=0.3","test_size=0\\.3"],["random_state=0","random_state=0"],["X_train.shape, X_test.shape","X_train\\.shape,X_test\\.shape"]],
+a:`from sklearn.model_selection import train_test_split  # 데이터를 나누는 함수 가져오기
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+# test_size=0.3 → 30%를 시험용으로. 학습에 안 쓴 데이터로 평가해야 진짜 성능을 알 수 있다
+# random_state=0 → 매번 같은 방식으로 섞어서 결과가 항상 같게 만든다
+X_train.shape, X_test.shape  # 행 개수가 7:3으로 나뉘었는지 확인`},
+{g:"c",t:"모델 생성하고 학습시키기",p:"선형 회귀 모델 객체를 만들고 훈련 데이터로 학습시킨 뒤, 가중치와 편향을 출력하세요.",
+c:[["from sklearn.linear_model import LinearRegression","fromsklearn\\.linear_modelimportLinearRegression"],["model = LinearRegression()","\\w+=LinearRegression\\(\\)"],["model.fit(X_train, y_train)","\\.fit\\(X_train,y_train\\)"],["coef_ 출력 (가중치)","\\.coef_"],["intercept_ 출력 (편향)","\\.intercept_"]],
+a:`from sklearn.linear_model import LinearRegression  # 선형 회귀 도구 가져오기
+model = LinearRegression()  # 아직 학습 전인 빈 모델 객체 생성
+model.fit(X_train, y_train)  # 훈련 데이터로 학습: 오차가 최소인 회귀선을 찾는다
+print(model.coef_, model.intercept_)  # coef_=가중치(기울기), intercept_=편향(절편)`},
+{g:"c",t:"모델로 예측하기",p:"테스트 데이터 X_test에 대한 예측값을 pred에 저장하세요.",
+c:[["pred = model.predict(X_test)","pred=\\w+\\.predict\\(X_test\\)"]],
+a:`pred = model.predict(X_test)  # 학습에 쓰지 않은 X_test로 예측. 실제 정답은 y_test, 예측값은 pred`},
+{g:"c",t:"모델 평가하기",p:"평균 제곱 오차와 결정 계수를 구하세요(실젯값 y_test, 예측값 pred).",
+c:[["from sklearn.metrics import mean_squared_error","fromsklearn\\.metricsimport.*mean_squared_error"],["mean_squared_error(y_test, pred)","mean_squared_error\\(y_test,pred\\)"],["from sklearn.metrics import r2_score","fromsklearn\\.metricsimport.*r2_score"],["r2_score(y_test, pred)","r2_score\\(y_test,pred\\)"]],
+a:`from sklearn.metrics import mean_squared_error, r2_score  # 평가 지표 함수 가져오기
+mean_squared_error(y_test, pred)  # 오차를 제곱해 평균 → 작을수록 예측이 좋다
+r2_score(y_test, pred)  # 결정 계수 → 1에 가까울수록 예측이 좋다 (순서: 실젯값, 예측값)`}
+],
+peng:[
+{g:"a",t:"파일 불러오기와 정보 확인",p:"penguins_size.csv를 df로 불러와 앞 5행과 데이터 정보를 확인하세요.",show:"head",
+c:[["import pandas as pd","importpandasaspd"],["df = pd.read_csv('penguins_size.csv')","df=pd\\.read_csv\\('penguins_size\\.csv'\\)"],["df.head()","df\\.head\\(\\)"],["df.info()","df\\.info\\(\\)"]],
+a:`import pandas as pd  # 데이터프레임 라이브러리
+df = pd.read_csv('penguins_size.csv')  # 이 파일은 영어라 인코딩 지정 없이도 읽힌다
+df.head()  # 앞 5행으로 속성 확인
+df.info()  # 전체 행 수, 속성 수, 결측치(Non-Null 개수) 확인`},
+{g:"b",t:"결측치 처리하기",p:"결측치 개수를 확인하고, 결측치가 있는 행을 삭제(원본에 반영)한 뒤 정보를 다시 확인하세요.",
+c:[["df.isnull().sum()","df\\.isnull\\(\\)\\.sum\\(\\)"],["df.dropna(axis=0, inplace=True)","df\\.dropna\\(axis=0,inplace=True\\)"],["df.info()","df\\.info\\(\\)"]],
+a:`df.isnull().sum()  # 속성별 결측치(NaN) 개수 확인
+df.dropna(axis=0, inplace=True)  # axis=0 → 행 삭제, inplace=True → df 자체에 바로 반영
+df.info()  # 행 개수가 줄었는지 다시 확인`},
+{g:"b",t:"독립 변수·종속 변수 설정하기",p:"iloc를 사용해 부리 길이, 부리 깊이, 날개 길이(2,3,4번 열)를 X로, species를 y로 설정하세요.",
+c:[["X = df.iloc[:, [2,3,4]]","X=df\\.iloc\\[:,\\[2,3,4\\]\\]"],["y = df['species']","y=df\\['species'\\]"]],
+a:`X = df.iloc[:, [2, 3, 4]]  # iloc[행, 열]: 모든 행(:), 2·3·4번째 열(0부터 센다)
+y = df['species']  # 맞히려는 값(종). 분류에서는 대괄호 한 겹의 1차원도 괜찮다`},
+{g:"b",t:"데이터 정규화하기",p:"MinMaxScaler로 X를 정규화하고, 다시 데이터프레임으로 만드세요.",
+c:[["from sklearn.preprocessing import MinMaxScaler","fromsklearn\\.preprocessingimportMinMaxScaler"],["X_scaled = MinMaxScaler().fit_transform(X)","X_scaled=MinMaxScaler\\(\\)\\.fit_transform\\(X\\)"],["X = pd.DataFrame(X_scaled, index=X.index, columns=X.columns)","X=pd\\.DataFrame\\(X_scaled,index=X\\.index,columns=X\\.columns\\)"]],
+a:`from sklearn.preprocessing import MinMaxScaler  # 값의 범위를 0~1로 맞추는 도구
+X_scaled = MinMaxScaler().fit_transform(X)  # 속성마다 단위·범위가 달라서 맞춰야 학습이 빠르고 정확하다
+X = pd.DataFrame(X_scaled, index=X.index, columns=X.columns)  # 결과가 배열이라 원래 인덱스·열 이름을 붙여 표로 되돌린다`},
+{g:"c",t:"훈련·테스트 데이터 분할하기",p:"7:3으로 분할하되, 펭귄 종 비율이 균일하게 나뉘도록 하세요.",
+c:[["from sklearn.model_selection import train_test_split","fromsklearn\\.model_selectionimporttrain_test_split"],["X_train, X_test, y_train, y_test = ...","X_train,X_test,y_train,y_test="],["test_size=0.3","test_size=0\\.3"],["stratify=y","stratify=y"]],
+a:`from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y, random_state=0)
+# stratify=y → 종 비율을 훈련/테스트에 똑같이 유지(한 종이 한쪽에 몰리는 것을 방지)
+# random_state → 결과를 고정(필기에 적어 둔 부분!)`},
+{g:"c",t:"로지스틱 회귀 모델 학습·예측",p:"로지스틱 회귀 모델을 만들어 학습시키고, 테스트 데이터의 첫 번째 행의 종을 예측하세요.",
+c:[["from sklearn.linear_model import LogisticRegression","fromsklearn\\.linear_modelimportLogisticRegression"],["model = LogisticRegression()","\\w+=LogisticRegression\\(\\)"],["model.fit(X_train, y_train)","\\.fit\\(X_train,y_train\\)"],["model.predict(X_test.iloc[[0]])","\\.predict\\(X_test\\.iloc\\[\\[0\\]\\]\\)"]],
+a:`from sklearn.linear_model import LogisticRegression  # 분류(종 구분)에 쓰는 회귀 모델
+model = LogisticRegression()  # 모델 객체 생성
+model.fit(X_train, y_train)  # 훈련 데이터로 학습
+model.predict(X_test.iloc[[0]])  # 첫 행 하나만 예측(대괄호 두 겹 → 2차원으로 넣어야 한다)`},
+{g:"c",t:"모델 평가하기",p:"정확도를 구하고, 오분류표를 히트맵(cmap='Blues', 숫자 표시)으로 그리세요. 축 이름은 Predicted / Actual.",
+c:[["accuracy_score(y_test, model.predict(X_test))","accuracy_score\\(y_test,\\w+\\.predict\\(X_test\\)\\)"],["conf = confusion_matrix(...)","conf=confusion_matrix\\(y_test,"],["sns.heatmap(conf, annot=True, cmap='Blues')","sns\\.heatmap\\(conf,annot=True,cmap='Blues'\\)"],["xlabel / ylabel","plt\\.xlabel\\('Predicted'\\)[\\s\\S]*plt\\.ylabel\\('Actual'\\)|plt\\.ylabel\\('Actual'\\)[\\s\\S]*plt\\.xlabel\\('Predicted'\\)"],["plt.show()","plt\\.show\\(\\)"]],
+a:`from sklearn.metrics import accuracy_score, confusion_matrix
+accuracy_score(y_test, model.predict(X_test))  # 정확도 = 맞게 예측한 비율(1에 가까울수록 좋다)
+conf = confusion_matrix(y_test, model.predict(X_test))  # 오분류표: 실제 vs 예측을 종별로 센 표
+sns.heatmap(conf, annot=True, cmap='Blues')  # 숫자(annot)를 넣은 색상표로 시각화
+plt.xlabel("Predicted")  # 가로축 = 예측값
+plt.ylabel("Actual")  # 세로축 = 실젯값
+plt.show()`}
+]};
+
+let cur="fit",data={},cnt=0,runs=[];
+const $=s=>document.querySelector(s),sv=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},ld=k=>{try{return localStorage.getItem(k)||""}catch(e){return""}};
+const norm=c=>c.split("\n").map(l=>l.replace(/#.*$/,"")).join("\n").replace(/["“”‘’]/g,"'").replace(/\s+/g,"");
+function head(r){const f=r.meta.fields,rows=r.data.slice(0,5);return `<div class="tb"><table><tr><th></th>${f.map(x=>`<th>${x}</th>`).join("")}</tr>${rows.map((x,i)=>`<tr><th>${i}</th>${f.map(k=>`<td>${x[k]===""||x[k]==null?"NaN":x[k]}</td>`).join("")}</tr>`).join("")}</table></div>`}
+function render(){const L=$("#list");L.innerHTML="";runs=[];cnt=0;
+ S[cur].forEach((q,i)=>{const id=cur+i,d=document.createElement("div");d.className="nb";
+  d.innerHTML=`<div class="h">${i+1}. ${q.t}</div><div class="pr">${q.p}</div>
+  <div class="row"><span class="lab">In [ ]:</span><div class="ed"><div class="gut">1</div><textarea readonly spellcheck="false" rows="3"></textarea></div></div>
+  <div class="out"></div><div class="ans"><a>정답·설명 보기</a></div>`;
+  const ta=d.querySelector("textarea"),g=d.querySelector(".gut"),lab=d.querySelector(".lab"),out=d.querySelector(".out");
+  const fit=()=>{const n=Math.max(3,ta.value.split("\n").length);ta.rows=n;g.textContent=Array.from({length:n},(_,k)=>k+1).join("\n")};
+  ta.value=ld("n"+id);fit();
+  ta.ondblclick=()=>{ta.readOnly=false;ta.focus()};
+  ta.oninput=()=>{sv("n"+id,ta.value);fit()};
+  ta.onblur=()=>{ta.readOnly=true};
+  const run=()=>{if(!ta.value.trim()){out.innerHTML="";return}cnt++;lab.textContent=`In [${cnt}]:`;
+   const n=norm(ta.value);let ok=0;
+   const rows=q.c.map(([l,r])=>{const p=new RegExp(r).test(n);if(p)ok++;return `<div class="${p?"ok":"no"}">${p?"✔":"✘"} ${l}</div>`}).join("");
+   out.innerHTML=`<div><span class="o">Out:</span> <b>${ok}/${q.c.length}</b> ${ok===q.c.length?"완벽해요 🎉":"충족"}</div>${rows}${q.show&&data[cur]&&ok===q.c.length?head(data[cur]):""}`};
+  ta.onkeydown=e=>{if(e.key==="Tab"&&!ta.readOnly){e.preventDefault();ta.setRangeText("    ",ta.selectionStart,ta.selectionEnd,"end");ta.oninput()}if(e.ctrlKey&&e.key==="Enter"){e.preventDefault();run()}};
+  d.querySelector(".ans a").onclick=()=>{const p=d.querySelector(".sol");if(p){p.remove();return}const x=document.createElement("pre");x.className="sol";x.textContent=q.a;d.querySelector(".ans").appendChild(x)};
+  runs.push(run);L.appendChild(d)})}
+$("#all").onclick=()=>{cnt=0;runs.forEach(r=>r())};
+document.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-s]").forEach(x=>x.classList.remove("on"));b.classList.add("on");cur=b.dataset.s;render()});
+document.querySelectorAll(".file input").forEach(inp=>inp.onchange=async()=>{const f=inp.files[0];if(!f)return;const buf=await f.arrayBuffer();let t;try{t=new TextDecoder("utf-8",{fatal:true}).decode(buf)}catch(e){t=new TextDecoder("euc-kr").decode(buf)}
+ data[inp.dataset.k]=Papa.parse(t,{header:true,skipEmptyLines:true});$("#fs").textContent=" ✔ "+f.name+" ("+data[inp.dataset.k].data.length+"행)"});
+render();
+</script></body></html>
